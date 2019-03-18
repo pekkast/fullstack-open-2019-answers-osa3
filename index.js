@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const db = require('./data/db.service');
+const db = require('./services/db.service');
 
 const app = express();
 app.use(bodyParser.json());
@@ -54,15 +54,15 @@ app.post('/api/persons', (req, res) => {
   const number = data.number.trim();
 
   if (!name) {
-    return res.json(400, {error: 'Name must be given'});
+    return res.status(400).json({error: 'Name must be given'});
   }
 
   if (!number) {
-    return res.json(400, { error: 'Number must be given' });
+    return res.status(400).json({ error: 'Number must be given' });
   }
 
   if (personExists(name)) {
-    return res.json(400, { error: 'Name must be unique' });
+    return res.status(400).json({ error: 'Name must be unique' });
   }
 
   const person = {

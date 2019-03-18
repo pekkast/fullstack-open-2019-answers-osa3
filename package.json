@@ -15,6 +15,13 @@
   "devDependencies": {
     "nodemon": "^1.18.10"
   },
+  "nodemonConfig": {
+    "ignore": [
+      "test/*.rest",
+      "data/*",
+      "README.md"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pekkast/fullstack-open-2019-answers-osa3.git"
