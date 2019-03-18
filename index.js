@@ -7,9 +7,9 @@ app.use(bodyParser.json());
 
 let persons = [];
 
-// as we add items to the end of array,
-// the last item always has greatest id
-const getNextId = () => persons.slice().pop().id + 1;
+// TODO fix this nonsense id generation
+// +1 is to prevent id = 0
+const getNextId = () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
 
 app.get('/', (req, res) => {
   res.send('Hello World');
