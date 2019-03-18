@@ -1,0 +1,19 @@
+GET http://localhost:3001/api/persons
+Accept-Encoding: application/json
+###
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+  "name": "Jukka Palmu",
+  "number": "555-555-555"
+}
+###
+PUT http://localhost:3001/api/persons/2
+Content-Type: application/json
+
+{
+  "name": "Martti Tienar",
+  "number": "040-1234567",
+  "id": 2
+}
