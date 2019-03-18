@@ -2,8 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./services/db.service');
 const morgan = require('morgan');
+const cors = require('cors');
 
 const app = express();
+app.use(cors({origin: 'http://localhost:3000'}));
 app.use(bodyParser.json());
 
 // setup morgan to show post body
