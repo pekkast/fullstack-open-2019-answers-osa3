@@ -15,6 +15,12 @@ app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+app.get('/info', (req, res) => {
+  res
+    .type('text/plain')
+    .send(`Puhelinluettelossa ${persons.length} henkilön tiedot.\n\n${new Date()}`);
+});
+
 app.get('/api/persons', (req, res) => {
   res.json(persons);
 });

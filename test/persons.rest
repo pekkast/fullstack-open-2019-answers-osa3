@@ -17,3 +17,5 @@ Content-Type: application/json
   "number": "040-1234567",
   "id": 2
 }
+###
+GET http://localhost:3001/info
