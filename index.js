@@ -10,6 +10,7 @@ let persons = [];
 // TODO fix this nonsense id generation
 // +1 is to prevent id = 0
 const getNextId = () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
+const personExists = (name) => persons.findIndex(p => p.name === name) !== -1;
 
 app.get('/', (req, res) => {
   res.send('Hello World');
@@ -42,23 +43,33 @@ app.put('/api/persons/:id', (req, res) => {
     return res.sendStatus(404);
   }
   const { name, number } = req.body;
-  persons[idx].name = name;
-  persons[idx].number = number;
+  persons[idx].name = name.trim();
+  persons[idx].number = number.trim();
   res.status(204).end();
   db.update(persons);
 });
 
 app.post('/api/persons', (req, res) => {
   const data = req.body;
+  const name = data.name.trim();
+  const number = data.number.trim();
 
-  if (!data.name) {
-    return res.json(400, 'Name must be given');
+  if (!name) {
+    return res.json(400, {error: 'Name must be given'});
+  }
+
+  if (!number) {
+    return res.json(400, { error: 'Number must be given' });
+  }
+
+  if (personExists(name)) {
+    return res.json(400, { error: 'Name must be unique' });
   }
 
   const person = {
     id: getNextId(),
-    name: data.name,
-    number: data.number
+    name,
+    number
   };
   persons.push(person);
   res
