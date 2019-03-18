@@ -19,3 +19,6 @@ Content-Type: application/json
 }
 ###
 GET http://localhost:3001/info
+###
+GET http://localhost:3001/api/persons/4
+Accept-Encoding: application/json
