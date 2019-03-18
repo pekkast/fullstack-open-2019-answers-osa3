@@ -5,6 +5,15 @@ const morgan = require('morgan');
 
 const app = express();
 app.use(bodyParser.json());
+
+// setup morgan to show post body
+morgan.token('post-body', (req, res, field) => {
+  if (req.method === 'POST') {
+    return JSON.stringify(req.body);
+  }
+  return '';
+});
+morgan.format('tiny', ':method :url :status :res[content-length] - :response-time ms :post-body')
 app.use(morgan('tiny'));
 
 let persons = [];
