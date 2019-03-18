@@ -5,7 +5,8 @@ const morgan = require('morgan');
 const cors = require('cors');
 
 const app = express();
-app.use(cors({origin: 'http://localhost:3000'}));
+// app.use(cors({origin: 'http://localhost:3000'}));
+app.use(express.static('build'));
 app.use(bodyParser.json());
 
 // setup morgan to show post body
