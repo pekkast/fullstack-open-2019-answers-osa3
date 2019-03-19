@@ -1,11 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./services/db.service');
 const morgan = require('morgan');
-const cors = require('cors');
+const mongoose = require('mongoose');
 
 const app = express();
-// app.use(cors({origin: 'http://localhost:3000'}));
 app.use(express.static('build'));
 app.use(bodyParser.json());
 
@@ -19,12 +19,7 @@ morgan.token('post-body', (req, res, field) => {
 morgan.format('tiny', ':method :url :status :res[content-length] - :response-time ms :post-body')
 app.use(morgan('tiny'));
 
-let persons = [];
-
-// TODO fix this nonsense id generation
-// +1 is to prevent id = 0
-const getNextId = () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
-const personExists = (name) => persons.findIndex(p => p.name === name) !== -1;
+const personExists = async name => !!await db.findByName(name);
 
 app.get('/', (req, res) => {
   res.send('Hello World');
@@ -36,79 +31,83 @@ app.get('/info', (req, res) => {
     .send(`Puhelinluettelossa ${persons.length} henkilön tiedot.\n\n${new Date()}`);
 });
 
-app.get('/api/persons', (req, res) => {
-  res.json(persons);
+app.get('/api/persons', async (req, res) => {
+  res.json(await db.getAll());
 });
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = +req.params.id;
-  const person = persons.find(person => person.id === id);
-  if (!person) {
-    return res.sendStatus(404);
+app.get('/api/persons/:id', async (req, res) => {
+  const id = req.params.id;
+  const person = await db.getOne(id);
+  if (person.error) {
+    return res.status(400).json({ error: person.error });
   }
-  res.json(person);
+  if (!person.data) {
+    return res.status(404).end();
+  }
+  res.json(person.data);
 });
 
-app.put('/api/persons/:id', (req, res) => {
-  const id = +req.params.id;
-  const idx = persons.findIndex(person => person.id === id);
-  if (idx === -1) {
-    return res.sendStatus(404);
+app.put('/api/persons/:id', async (req, res) => {
+  const id = req.params.id;
+  const current = await db.getOne(id);
+  if (current.error) {
+    return res.status(400).json({error: current.error});
   }
-  const { name, number } = req.body;
-  persons[idx].name = name.trim();
-  persons[idx].number = number.trim();
+  if (!current.data) {
+    return res.status(404).end();
+  }
+  await db.update({ id, number: req.body.number.trim() });
   res.status(204).end();
-  db.update(persons);
 });
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', async (req, res) => {
   const data = req.body;
   const name = data.name.trim();
   const number = data.number.trim();
 
   if (!name) {
-    return res.status(400).json({error: 'Name must be given'});
+    return res.status(400).json({ error: 'Name must be given' });
   }
 
   if (!number) {
     return res.status(400).json({ error: 'Number must be given' });
   }
 
-  if (personExists(name)) {
+  if (await personExists(name)) {
     return res.status(400).json({ error: 'Name must be unique' });
   }
 
-  const person = {
-    id: getNextId(),
-    name,
-    number
-  };
-  persons.push(person);
+  const person = await db.create({ name, number });
   res
     .status(201)
     .location(`/api/persons/${person.id}`)
     .end();
-  db.update(persons);
 });
 
-app.delete('/api/persons/:id', (req, res) => {
-  const id = +req.params.id;
-  const idx = persons.findIndex(person => person.id === id);
-  if (idx === -1) {
-    return res.sendStatus(404);
+app.delete('/api/persons/:id', async (req, res) => {
+  const id = req.params.id;
+  if ((await db.getOne(id)).data) {
+    await db.remove(id);
   }
-
-  persons.splice(idx, 1);
-  res.status(200).end();
-  db.update(persons);
+  // DELETE Should be idempotent, hence always 204
+  res.status(204).end();
 });
 
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  db.getAll((data) => {
-    persons = JSON.parse(data);
-    console.log(`Database includes ${persons.length} persons`);
+
+const port = process.env.PORT;
+const startServer = () => {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
   });
-});
+};
+
+const mongoUrl = process.env.MONGODB_URI;
+const connect = () => {
+  mongoose.connection
+    .on('error', console.log)
+    .on('disconnected', connect)
+    .once('open', startServer);
+  return mongoose.connect(mongoUrl, { keepAlive: 1, useNewUrlParser: true });
+}
+
+connect();
