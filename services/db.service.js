@@ -21,7 +21,8 @@ personSchema.set('toJSON', {
 const Person = mongoose.model('Person', personSchema);
 
 const create = async ({ name, number }) => await Person.create({ name, number });
-const update = async ({ id, number }) => await Person.findByIdAndUpdate(id, { number });
+const update = async ({ id, number }) =>
+  await Person.findByIdAndUpdate(id, { number }, { runValidators: true, context: 'query' });
 const remove = async id => await Person.findByIdAndDelete(id);
 
 const getAll = async () => {
