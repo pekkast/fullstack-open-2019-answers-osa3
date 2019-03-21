@@ -13,7 +13,7 @@ const create = async (name, number) => {
   return await Person.create({ name, number });
 };
 
-const [program, file, password, name, number] = process.argv;
+const [password, name, number] = process.argv.slice(2);
 if (!password) {
   console.error('password not defined');
   process.exit(1);
@@ -37,6 +37,6 @@ const connect = () => {
     .on('error', console.log)
     .once('open', processData);
   return mongoose.connect(url, { keepAlive: 1, useNewUrlParser: true });
-}
+};
 
 connect();

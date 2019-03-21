@@ -10,16 +10,16 @@ app.use(express.static('build'));
 app.use(bodyParser.json());
 
 // setup morgan to show post body
-morgan.token('post-body', (req, res, field) => {
+morgan.token('post-body', (req) => {
   if (req.method === 'POST') {
     return JSON.stringify(req.body);
   }
   return '';
 });
-morgan.format('tiny', ':method :url :status :res[content-length] - :response-time ms :post-body')
+morgan.format('tiny', ':method :url :status :res[content-length] - :response-time ms :post-body');
 app.use(morgan('tiny'));
 
-const personExists = async name => !!await db.findByName(name);
+// const personExists = async name => !!await db.findByName(name);
 
 app.get('/api', (req, res) => {
   res.redirect('/health');
@@ -134,6 +134,6 @@ const connect = () => {
     .on('disconnected', connect)
     .once('open', startServer);
   return mongoose.connect(mongoUrl, { keepAlive: 1, useNewUrlParser: true });
-}
+};
 
 connect();

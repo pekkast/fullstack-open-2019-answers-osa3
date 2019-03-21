@@ -11,33 +11,33 @@ const personSchema = new mongoose.Schema({
 personSchema.plugin(uniqueValidator);
 
 personSchema.set('toJSON', {
-  transform: (document, returnedObject) => {
-    returnedObject.id = document._id.toString();
-    delete returnedObject._id;
-    delete returnedObject.__v;
-  }
+  transform: doc => ({
+    // eslint-disable-next-line no-underscore-dangle
+    id: doc._id.toString(),
+    name: doc.name,
+    number: doc.number,
+  }),
 });
 
 const Person = mongoose.model('Person', personSchema);
 
-const create = async ({ name, number }) => await Person.create({ name, number });
-const update = async ({ id, number }) =>
-  await Person.findByIdAndUpdate(id, { number }, { runValidators: true, context: 'query' });
-const remove = async id => await Person.findByIdAndDelete(id);
+const create = async ({ name, number }) => Person.create({ name, number });
+const update = async ({ id, number }) => Person.findByIdAndUpdate(id, { number }, { runValidators: true, context: 'query' });
+const remove = async id => Person.findByIdAndDelete(id);
 
 const getAll = async () => {
   const response = await Person.find();
   return response.map(p => p.toJSON());
-}
+};
 
-const getOne = async id => {
+const getOne = async (id) => {
   const person = await Person.findById(id);
   return person && person.toJSON();
-}
+};
 
-const findByName = async name => {
+const findByName = async (name) => {
   const response = await Person.findOne({ name });
   return response && response.toJSON();
-}
+};
 
 module.exports = { getAll, getOne, update, create, remove, findByName };
