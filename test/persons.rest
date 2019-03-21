@@ -6,21 +6,22 @@ Content-Type: application/json
 
 {
   "name": "Jukka Palmu",
-  "number": "555-555-555"
+  "number": "555-555-556"
 }
 ###
-PUT http://localhost:3001/api/persons/2
+PUT http://localhost:3001/api/persons/5c900c008844bd0c04c1f70b
 Content-Type: application/json
 
 {
   "name": "Martti Tienar",
-  "number": "040-1234567",
-  "id": 2
+  "number": "040-1234567"
 }
+###
+GET http://localhost:3001/api
 ###
 GET http://localhost:3001/info
 ###
-GET http://localhost:3001/api/persons/4
+GET http://localhost:3001/api/persons/5c93e92760bf2946b4cb8167
 Accept-Encoding: application/json
 ###
-DELETE http://localhost:3001/api/persons/6
+DELETE http://localhost:3001/api/persons/5c9008ea8b7267254004980b

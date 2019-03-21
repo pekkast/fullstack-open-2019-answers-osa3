@@ -21,43 +21,48 @@ app.use(morgan('tiny'));
 
 const personExists = async name => !!await db.findByName(name);
 
-app.get('/', (req, res) => {
-  res.send('Hello World');
+app.get('/api', (req, res) => {
+  res.redirect('/health');
 });
 
-app.get('/info', (req, res) => {
+app.get('/health', (req, res) => {
+  res.send('Healthy');
+});
+
+app.get('/info', async (req, res) => {
   res
     .type('text/plain')
-    .send(`Puhelinluettelossa ${persons.length} henkilön tiedot.\n\n${new Date()}`);
+    .send(`Puhelinluettelossa ${(await db.getAll()).length} henkilön tiedot.\n\n${new Date()}`);
 });
 
 app.get('/api/persons', async (req, res) => {
   res.json(await db.getAll());
 });
 
-app.get('/api/persons/:id', async (req, res) => {
+app.get('/api/persons/:id', async (req, res, next) => {
   const id = req.params.id;
-  const person = await db.getOne(id);
-  if (person.error) {
-    return res.status(400).json({ error: person.error });
+  try {
+    const person = await db.getOne(id);
+    if (person) {
+      return res.json(person);
+    }
+    res.status(404).end();
+  } catch (ex) {
+    next(ex);
   }
-  if (!person.data) {
-    return res.status(404).end();
-  }
-  res.json(person.data);
 });
 
-app.put('/api/persons/:id', async (req, res) => {
+app.put('/api/persons/:id', async (req, res, next) => {
   const id = req.params.id;
-  const current = await db.getOne(id);
-  if (current.error) {
-    return res.status(400).json({error: current.error});
+  try {
+    const result = await db.update({ id, number: req.body.number.trim() });
+    if (result) {
+      return res.status(204).end(); // PUT is idempotent - no content
+    }
+    res.status(404).end();
+  } catch (ex) {
+    await next(ex);
   }
-  if (!current.data) {
-    return res.status(404).end();
-  }
-  await db.update({ id, number: req.body.number.trim() });
-  res.status(204).end();
 });
 
 app.post('/api/persons', async (req, res) => {
@@ -68,11 +73,9 @@ app.post('/api/persons', async (req, res) => {
   if (!name) {
     return res.status(400).json({ error: 'Name must be given' });
   }
-
   if (!number) {
     return res.status(400).json({ error: 'Number must be given' });
   }
-
   if (await personExists(name)) {
     return res.status(400).json({ error: 'Name must be unique' });
   }
@@ -84,15 +87,26 @@ app.post('/api/persons', async (req, res) => {
     .end();
 });
 
-app.delete('/api/persons/:id', async (req, res) => {
+app.delete('/api/persons/:id', async (req, res, next) => {
   const id = req.params.id;
-  if ((await db.getOne(id)).data) {
+  try {
     await db.remove(id);
+    // DELETE Should be idempotent, hence always 204
+    res.status(204).end();
+  } catch (ex) {
+    next(ex);
   }
-  // DELETE Should be idempotent, hence always 204
-  res.status(204).end();
 });
 
+const errorHandler = (error, req, res, next) => {
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return res.status(400).json({ error: 'malformatted id' })
+  }
+  console.log('not handled', error);
+  next(error);
+};
+
+app.use(errorHandler);
 
 const port = process.env.PORT;
 const startServer = () => {
