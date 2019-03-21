@@ -65,7 +65,7 @@ app.put('/api/persons/:id', async (req, res, next) => {
   }
 });
 
-app.post('/api/persons', async (req, res) => {
+app.post('/api/persons', async (req, res, next) => {
   const data = req.body;
   const name = data.name.trim();
   const number = data.number.trim();
@@ -76,15 +76,20 @@ app.post('/api/persons', async (req, res) => {
   if (!number) {
     return res.status(400).json({ error: 'Number must be given' });
   }
-  if (await personExists(name)) {
-    return res.status(400).json({ error: 'Name must be unique' });
-  }
+  // Rely on uniqueValidator now on
+  // if (await personExists(name)) {
+  //   return res.status(400).json({ error: 'Name must be unique' });
+  // }
 
-  const person = await db.create({ name, number });
-  res
-    .status(201)
-    .location(`/api/persons/${person.id}`)
-    .end();
+  try {
+    const person = await db.create({ name, number });
+    res
+      .status(201)
+      .location(`/api/persons/${person.id}`)
+      .end();
+  } catch (ex) {
+    next(ex);
+  }
 });
 
 app.delete('/api/persons/:id', async (req, res, next) => {
@@ -98,15 +103,22 @@ app.delete('/api/persons/:id', async (req, res, next) => {
   }
 });
 
-const errorHandler = (error, req, res, next) => {
+const castErrorHandler = (error, req, res, next) => {
   if (error.name === 'CastError' && error.kind === 'ObjectId') {
-    return res.status(400).json({ error: 'malformatted id' })
+    return res.status(400).json({ error: 'malformatted id' });
+  }
+  next(error);
+};
+app.use(castErrorHandler);
+
+const validationErrorHandler = (error, req, res, next) => {
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message });
   }
   console.log('not handled', error);
   next(error);
 };
-
-app.use(errorHandler);
+app.use(validationErrorHandler);
 
 const port = process.env.PORT;
 const startServer = () => {
