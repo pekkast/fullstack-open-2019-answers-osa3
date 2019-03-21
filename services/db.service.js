@@ -18,28 +18,24 @@ const Person = mongoose.model('Person', personSchema);
 const create = async ({ name, number }) => {
   const response = await Person
     .create({ name, number });
-  console.log('create', response);
   return response;
 };
 
 const update = async ({ id, number }) => {
   const response = await Person
     .findByIdAndUpdate(id, { number });
-  console.log('update', response);
   return response;
 };
 
 const remove = async id => {
   const response = await Person
     .findByIdAndDelete(id);
-  console.log('remove', response);
   return response;
 };
 
 const getAll = async () => {
   const response = await Person
     .find();
-  console.log('getall', response);
   return response.map(p => p.toJSON());
 }
 
@@ -54,8 +50,6 @@ const getOne = async id => {
       kind: error.kind,
       value: error.stringValue
     };
-
-    console.error(response.error);
   }
   return response;
 }
